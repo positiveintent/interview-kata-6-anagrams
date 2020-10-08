@@ -1,10 +1,11 @@
 import math
+import os
 import re
 from time import time
 
-def char_range(c1='a', c2='z'):
-    for c in range(ord(c1), ord(c2)+1):
-        yield chr(c)
+def char_range(start_char='a', end_char='z'):
+    for char in range(ord(start_char), ord(end_char)+1):
+        yield chr(char)
 
 def prime_range():
     num = 1
@@ -15,6 +16,8 @@ def prime_range():
                 break
         else:
             yield(num)
+
+REGEX_ALPHA_LOWER = re.compile(r"[^a-z]+")
 
 class Anagram:
 
@@ -28,11 +31,14 @@ class Anagram:
         self.word_prime_value = self._get_prime_value(self.word)
         self.word_list_file = word_list_file
 
+        if not os.path.isfile(self.word_list_file):
+            raise Exception("File does not exist.")
+
         self._process()
 
 
     def __str__(self):
-        return '\n'.join(map(str, self.anagrams))
+        return '\n'.join(self.anagrams)
 
 
     def __repr__(self):
@@ -41,31 +47,26 @@ class Anagram:
 
     def _process(self):
 
-        try:
-            with open(self.word_list_file) as f:
-                while True:
-                    line = f.readline()
-                    if not line:
-                        break
+        with open(self.word_list_file) as f:
+            for line in f:
+                if not line:
+                    break
 
-                    line_scrubbed = self._scrub(line)
+                line_scrubbed = self._scrub(line)
 
-                    if not line_scrubbed[0] in self.word:
-                        continue
+                if not line_scrubbed[0] in self.word:
+                    continue
 
-                    if len(line_scrubbed) != self.word_length:
-                        continue
+                if len(line_scrubbed) != self.word_length:
+                    continue
 
-                    if self.word_prime_value == self._get_prime_value(line_scrubbed):
-                        self.anagrams.add(line.strip())
-                        self.anagrams_scrubbed.add(line_scrubbed)
-                        
-                        # NOTE: we cannot do this because anagrams can be encountered with special characters further down the file
-                        # if len(self.anagrams_scrubbed) == self.possible_anagram_count:
-                        #     break;
-
-        except OSError as err:
-            print("OS error: {0}".format(err))
+                if self.word_prime_value == self._get_prime_value(line_scrubbed):
+                    self.anagrams.add(line.strip())
+                    self.anagrams_scrubbed.add(line_scrubbed)
+                    
+                    # NOTE: we cannot do this because anagrams can be encountered with special characters further down the file
+                    # if len(self.anagrams_scrubbed) == self.possible_anagram_count:
+                    #     break;
     
 
     def _get_prime_value(self, word: str = ''):
@@ -79,7 +80,7 @@ class Anagram:
     
     @staticmethod
     def _scrub(word: str):
-        return re.sub(r"[^a-z]+", '', word.lower())
+        return REGEX_ALPHA_LOWER.sub('', word.lower())
 
 
 if __name__ == '__main__':
